@@ -1,0 +1,37 @@
+refresh_minutes = 5
+
+[[assets]]
+id = 1
+name = "VWCE"
+type = "ETF"
+broker = "Directa"
+symbol = "VWCE.MI"
+yahoo_symbol = "VWCE.MI"
+isin_bond = ""
+quantity = 162
+avg_cost = 165
+manual_price = 0
+
+[[assets]]
+id = 2
+name = "Bitcoin"
+type = "Crypto"
+broker = "Binance"
+symbol = "BTC-USD"
+yahoo_symbol = "BTC-USD"
+isin_bond = ""
+quantity = 0.45
+avg_cost = 54000
+manual_price = 0
+
+[[assets]]
+id = 3
+name = "BTP 2054"
+type = "Bond"
+broker = "Fineco"
+symbol = "IT0005083057"
+yahoo_symbol = ""
+isin_bond = "IT0005083057"
+quantity = 5000
+avg_cost = 98.5
+manual_price = 0
