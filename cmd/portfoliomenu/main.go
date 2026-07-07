@@ -5,39 +5,51 @@ import (
 	"log"
 	"time"
 
+	"github.com/antedoro/PortfolioMenu/internal/assets"
 	"github.com/antedoro/PortfolioMenu/internal/config"
 	"github.com/antedoro/PortfolioMenu/internal/models"
 	"github.com/antedoro/PortfolioMenu/internal/portfolio"
 	"github.com/antedoro/PortfolioMenu/internal/providers"
+	"github.com/antedoro/PortfolioMenu/internal/server"
 	"github.com/antedoro/PortfolioMenu/internal/tray"
 )
 
 func main() {
 
-	cfg, err := config.Load(
-		"configs/portfoliomenu.toml",
-	)
+	cfg, err :=
+		config.Load(
+			"configs/portfoliomenu.toml",
+		)
 
 	if err != nil {
+
 		log.Fatal(err)
+
 	}
 
 	fmt.Println()
+
 	fmt.Println("PortfolioMenu")
+
 	fmt.Println("========================================")
+
 	fmt.Printf(
 		"Refresh ogni %d minuti\n",
 		cfg.RefreshMinutes,
 	)
 
-	p := buildPortfolio(cfg)
+	p :=
+		buildPortfolio(cfg)
 
-	portfolio.Calculate(&p)
-
-	updater := portfolio.NewUpdater(
+	portfolio.Calculate(
 		&p,
-		cfg.RefreshMinutes,
 	)
+
+	updater :=
+		portfolio.NewUpdater(
+			&p,
+			cfg.RefreshMinutes,
+		)
 
 	updater.Start()
 
@@ -45,9 +57,24 @@ func main() {
 		"Portfolio updater avviato",
 	)
 
-	appTray := tray.New(
-		updater,
+	webServer :=
+		server.New(
+			updater,
+			assets.Templates,
+		)
+
+	webServer.Start(
+		"localhost:8080",
 	)
+
+	fmt.Println(
+		"Dashboard disponibile su http://localhost:8080",
+	)
+
+	appTray :=
+		tray.New(
+			updater,
+		)
 
 	appTray.Run()
 
@@ -61,34 +88,37 @@ func buildPortfolio(
 
 	for _, a := range cfg.Assets {
 
-		asset := models.Asset{
+		asset :=
+			models.Asset{
 
-			ID: a.ID,
+				ID: a.ID,
 
-			Name: a.Name,
+				Name: a.Name,
 
-			Ticker: a.Ticker,
+				Ticker: a.Ticker,
 
-			Type: models.AssetType(a.Type),
+				Type: models.AssetType(a.Type),
 
-			Broker: a.Broker,
+				Broker: a.Broker,
 
-			Symbol: a.Symbol,
+				Symbol: a.Symbol,
 
-			YahooSymbol: a.YahooSymbol,
+				YahooSymbol: a.YahooSymbol,
 
-			ISINBond: a.ISINBond,
+				ISINBond: a.ISINBond,
 
-			Quantity: a.Quantity,
+				Quantity: a.Quantity,
 
-			AvgCost: a.AvgCost,
+				AvgCost: a.AvgCost,
 
-			ManualPrice: a.ManualPrice,
+				ManualPrice: a.ManualPrice,
 
-			CurrencySymbol: "€",
+				CurrencySymbol: "€",
 
-			LastUpdate: time.Now(),
-		}
+				Currency: "EUR",
+
+				LastUpdate: time.Now(),
+			}
 
 		switch {
 
@@ -126,6 +156,7 @@ func buildPortfolio(
 
 				fmt.Println(
 					"Errore Borsa Italiana:",
+					asset.Name,
 					err,
 				)
 
@@ -145,6 +176,7 @@ func buildPortfolio(
 
 				fmt.Println(
 					"Errore Yahoo:",
+					asset.Name,
 					err,
 				)
 
@@ -172,7 +204,8 @@ func buildPortfolio(
 
 	}
 
-	p.LastUpdate = time.Now()
+	p.LastUpdate =
+		time.Now()
 
 	return p
 

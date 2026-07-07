@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<title>PortfolioMenu</title>
+
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+
+</head>
+
+
+<body class="bg-gray-100 p-8">
+
+
+<h1 class="text-3xl font-bold mb-6">
+PortfolioMenu
+</h1>
+
+
+
+<div class="grid grid-cols-4 gap-4">
+
+
+<div class="bg-white p-4 rounded shadow">
+
+<h2>Total Value</h2>
+
+<p class="text-2xl">
+{{printf "%.2f" .TotalValue}} €
+</p>
+
+</div>
+
+
+
+<div class="bg-white p-4 rounded shadow">
+
+<h2>Invested</h2>
+
+<p class="text-2xl">
+{{printf "%.2f" .TotalInvested}} €
+</p>
+
+</div>
+
+
+
+<div class="bg-white p-4 rounded shadow">
+
+<h2>Gain</h2>
+
+<p class="text-2xl">
+{{printf "%.2f" .TotalGain}} €
+</p>
+
+</div>
+
+
+
+<div class="bg-white p-4 rounded shadow">
+
+<h2>Return</h2>
+
+<p class="text-2xl">
+{{printf "%.2f" .GainPercent}} %
+</p>
+
+</div>
+
+
+</div>
+
+
+
+
+<h2 class="text-xl font-bold mt-8 mb-3">
+Assets
+</h2>
+
+
+
+<table class="bg-white rounded shadow w-full">
+
+
+<tr class="border">
+
+<th>ID</th>
+<th>Ticker</th>
+<th>Type</th>
+<th>Value</th>
+<th>Gain</th>
+
+</tr>
+
+
+
+{{range .Assets}}
+
+<tr class="border text-center">
+
+<td>{{.ID}}</td>
+
+<td>{{.Ticker}}</td>
+
+<td>{{.Type}}</td>
+
+<td>{{printf "%.2f" .MarketValue}} €</td>
+
+<td>{{printf "%.2f" .GainLoss}} €</td>
+
+
+</tr>
+
+
+{{end}}
+
+
+
+</table>
+
+
+</body>
+
+</html>

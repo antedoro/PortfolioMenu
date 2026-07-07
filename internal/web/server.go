@@ -1,4 +1,4 @@
-package server
+package web
 
 import (
 	"embed"
@@ -10,12 +10,12 @@ import (
 )
 
 type Server struct {
-	Updater *portfolio.Updater
+	Portfolio *portfolio.Updater
 
 	Templates *template.Template
 }
 
-func New(
+func NewServer(
 	updater *portfolio.Updater,
 	templates embed.FS,
 ) *Server {
@@ -30,7 +30,7 @@ func New(
 
 	return &Server{
 
-		Updater: updater,
+		Portfolio: updater,
 
 		Templates: tmpl,
 	}
@@ -38,28 +38,25 @@ func New(
 }
 
 func (s *Server) Start(
-	address string,
+	addr string,
 ) {
 
-	mux :=
-		http.NewServeMux()
-
-	mux.HandleFunc(
+	http.HandleFunc(
 		"/",
-		s.index,
+		s.dashboard,
 	)
 
 	fmt.Println(
-		"Dashboard running:",
-		"http://"+address,
+		"Dashboard:",
+		"http://"+addr,
 	)
 
 	go func() {
 
 		err :=
 			http.ListenAndServe(
-				address,
-				mux,
+				addr,
+				nil,
 			)
 
 		if err != nil {
@@ -72,19 +69,19 @@ func (s *Server) Start(
 
 }
 
-func (s *Server) index(
+func (s *Server) dashboard(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 
-	portfolio :=
-		s.Updater.Get()
+	data :=
+		s.Portfolio.Get()
 
 	err :=
 		s.Templates.ExecuteTemplate(
 			w,
 			"index.html",
-			portfolio,
+			data,
 		)
 
 	if err != nil {
@@ -92,7 +89,7 @@ func (s *Server) index(
 		http.Error(
 			w,
 			err.Error(),
-			http.StatusInternalServerError,
+			500,
 		)
 
 	}
