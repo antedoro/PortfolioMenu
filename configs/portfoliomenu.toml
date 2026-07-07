@@ -3,6 +3,7 @@ refresh_minutes = 5
 [[assets]]
 id = 1
 name = "VWCE"
+ticker = "VWCE"
 type = "ETF"
 broker = "Directa"
 symbol = "VWCE.MI"
@@ -15,6 +16,7 @@ manual_price = 0
 [[assets]]
 id = 2
 name = "Bitcoin"
+ticker = "BTC"
 type = "Crypto"
 broker = "Binance"
 symbol = "BTC-USD"
@@ -27,6 +29,7 @@ manual_price = 0
 [[assets]]
 id = 3
 name = "BTP 2054"
+ticker = "BTP54"
 type = "Bond"
 broker = "Fineco"
 symbol = "IT0005083057"

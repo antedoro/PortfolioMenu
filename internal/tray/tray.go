@@ -8,6 +8,7 @@ import (
 
 	"github.com/getlantern/systray"
 
+	"github.com/antedoro/PortfolioMenu/internal/models"
 	"github.com/antedoro/PortfolioMenu/internal/portfolio"
 )
 
@@ -102,15 +103,11 @@ func (t *Tray) onReady() {
 
 			case <-checkUpdate.ClickedCh:
 
-				fmt.Println(
-					"Check update",
-				)
+				fmt.Println("Check update")
 
 			case <-about.ClickedCh:
 
-				fmt.Println(
-					"PortfolioMenu",
-				)
+				fmt.Println("PortfolioMenu")
 
 			case <-quit.ClickedCh:
 
@@ -155,21 +152,44 @@ func (t *Tray) updateTitle() {
 		a :=
 			p.Assets[t.index]
 
-		text :=
-			fmt.Sprintf(
-				"%s: %.2f %s",
-				a.Name,
-				a.LastPrice,
-				a.CurrencySymbol,
-			)
+		title :=
+			formatTitle(a)
 
 		systray.SetTitle(
-			text,
+			title,
 		)
 
 		t.index++
 
 	}
+
+}
+
+func formatTitle(
+	a models.Asset,
+) string {
+
+	name := a.Name
+
+	if len(name) > 7 {
+
+		name = name[:7]
+
+	}
+
+	value :=
+		int(a.MarketValue)
+
+	gain :=
+		int(a.GainLoss)
+
+	return fmt.Sprintf(
+		"%-7s %7d€ %+6d€ %+7.2f%%",
+		name+":",
+		value,
+		gain,
+		a.GainPercent,
+	)
 
 }
 

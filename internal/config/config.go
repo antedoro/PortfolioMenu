@@ -14,6 +14,7 @@ type Config struct {
 type AssetConfig struct {
 	ID          int     `toml:"id"`
 	Name        string  `toml:"name"`
+	Ticker      string  `toml:"ticker"`
 	Type        string  `toml:"type"`
 	Broker      string  `toml:"broker"`
 	Symbol      string  `toml:"symbol"`

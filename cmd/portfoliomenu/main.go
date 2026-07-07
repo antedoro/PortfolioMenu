@@ -19,17 +19,12 @@ func main() {
 	)
 
 	if err != nil {
-
 		log.Fatal(err)
-
 	}
 
 	fmt.Println()
-
 	fmt.Println("PortfolioMenu")
-
 	fmt.Println("========================================")
-
 	fmt.Printf(
 		"Refresh ogni %d minuti\n",
 		cfg.RefreshMinutes,
@@ -39,11 +34,10 @@ func main() {
 
 	portfolio.Calculate(&p)
 
-	updater :=
-		portfolio.NewUpdater(
-			&p,
-			cfg.RefreshMinutes,
-		)
+	updater := portfolio.NewUpdater(
+		&p,
+		cfg.RefreshMinutes,
+	)
 
 	updater.Start()
 
@@ -51,12 +45,10 @@ func main() {
 		"Portfolio updater avviato",
 	)
 
-	appTray :=
-		tray.New(
-			updater,
-		)
+	appTray := tray.New(
+		updater,
+	)
 
-	// Avvio menubar macOS
 	appTray.Run()
 
 }
@@ -75,6 +67,8 @@ func buildPortfolio(
 
 			Name: a.Name,
 
+			Ticker: a.Ticker,
+
 			Type: models.AssetType(a.Type),
 
 			Broker: a.Broker,
@@ -91,6 +85,8 @@ func buildPortfolio(
 
 			ManualPrice: a.ManualPrice,
 
+			CurrencySymbol: "€",
+
 			LastUpdate: time.Now(),
 		}
 
@@ -101,9 +97,19 @@ func buildPortfolio(
 			provider :=
 				providers.NewManualProvider()
 
-			provider.GetPrice(
-				&asset,
-			)
+			err :=
+				provider.GetPrice(
+					&asset,
+				)
+
+			if err != nil {
+
+				fmt.Println(
+					"Errore prezzo manuale:",
+					err,
+				)
+
+			}
 
 		case asset.Type == models.Bond &&
 			asset.ISINBond != "":
@@ -119,7 +125,7 @@ func buildPortfolio(
 			if err != nil {
 
 				fmt.Println(
-					"Errore Borsa:",
+					"Errore Borsa Italiana:",
 					err,
 				)
 
