@@ -16,21 +16,16 @@ import (
 
 func main() {
 
-	cfg, err :=
-		config.Load(
-			"configs/portfoliomenu.toml",
-		)
+	cfg, err := config.Load(
+		"configs/portfoliomenu.toml",
+	)
 
 	if err != nil {
-
 		log.Fatal(err)
-
 	}
 
 	fmt.Println()
-
 	fmt.Println("PortfolioMenu")
-
 	fmt.Println("========================================")
 
 	fmt.Printf(
@@ -38,12 +33,9 @@ func main() {
 		cfg.RefreshMinutes,
 	)
 
-	p :=
-		buildPortfolio(cfg)
+	p := buildPortfolio(cfg)
 
-	portfolio.Calculate(
-		&p,
-	)
+	portfolio.Calculate(&p)
 
 	updater :=
 		portfolio.NewUpdater(
@@ -113,14 +105,26 @@ func buildPortfolio(
 
 				ManualPrice: a.ManualPrice,
 
-				CurrencySymbol: "€",
-
 				Currency: "EUR",
+
+				CurrencySymbol: "€",
 
 				LastUpdate: time.Now(),
 			}
 
+		// Crypto quotate in USD
+
+		if asset.Type == models.Crypto {
+
+			asset.Currency = "USD"
+
+			asset.CurrencySymbol = "$"
+
+		}
+
 		switch {
+
+		// Prezzo inserito manualmente
 
 		case asset.ManualPrice > 0:
 
@@ -140,6 +144,8 @@ func buildPortfolio(
 				)
 
 			}
+
+		// Bond Borsa Italiana
 
 		case asset.Type == models.Bond &&
 			asset.ISINBond != "":
@@ -161,6 +167,8 @@ func buildPortfolio(
 				)
 
 			}
+
+		// Yahoo Finance
 
 		case asset.YahooSymbol != "":
 
@@ -191,6 +199,8 @@ func buildPortfolio(
 			)
 
 	}
+
+	// Cambio EUR/USD
 
 	currency :=
 		providers.NewCurrencyProvider()

@@ -22,19 +22,19 @@ broker = "Binance"
 symbol = "BTC-USD"
 yahoo_symbol = "BTC-USD"
 isin_bond = ""
-quantity = 0.45
+quantity = 0.0045
 avg_cost = 54000
 manual_price = 0
 
 [[assets]]
 id = 3
-name = "BTP 2054"
-ticker = "BTP54"
+name = "BTP 2030"
+ticker = "BTP30"
 type = "Bond"
 broker = "Fineco"
-symbol = "IT0005083057"
+symbol = "IT0005425761"
 yahoo_symbol = ""
-isin_bond = "IT0005083057"
-quantity = 5000
+isin_bond = "IT0005425761"
+quantity = 250
 avg_cost = 98.5
 manual_price = 0

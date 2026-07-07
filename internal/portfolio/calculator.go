@@ -4,106 +4,81 @@ import (
 	"github.com/antedoro/PortfolioMenu/internal/models"
 )
 
-// Calculate aggiorna tutti i valori del portafoglio
-func Calculate(p *models.Portfolio) {
+func Calculate(
+	p *models.Portfolio,
+) {
 
-	var totalCost float64
-	var totalValue float64
-	var totalGain float64
+	var invested float64
+
+	var value float64
 
 	for i := range p.Assets {
 
-		asset := &p.Assets[i]
+		asset :=
+			&p.Assets[i]
 
-		// Capitale investito
-		asset.Invested = calculateInvested(*asset)
+		// capitale investito
+		asset.Invested =
+			asset.Quantity *
+				asset.AvgCost
 
-		// Valore corrente
-		asset.MarketValue = calculateMarketValue(*asset)
+		asset.CapitalInvested =
+			asset.Invested
 
-		// Gain/Loss lordo
-		asset.GainLoss = asset.MarketValue - asset.Invested
+		// valore attuale base
 
-		// Percentuale Gain/Loss
-		if asset.Invested > 0 {
+		marketValue :=
+			asset.Quantity *
+				asset.LastPrice
 
-			asset.GainPercent =
-				(asset.GainLoss / asset.Invested) * 100
+		// Conversione crypto USD -> EUR
 
-		} else {
+		if asset.Currency == "USD" &&
+			p.ExchangeRate > 0 {
 
-			asset.GainPercent = 0
+			marketValue =
+				marketValue /
+					p.ExchangeRate
 
 		}
 
-		totalCost += asset.Invested
+		asset.MarketValue =
+			marketValue
 
-		totalValue += asset.MarketValue
+		asset.GainLoss =
+			asset.MarketValue -
+				asset.Invested
 
-		totalGain += asset.GainLoss
+		if asset.Invested != 0 {
 
-	}
+			asset.GainPercent =
+				(asset.GainLoss /
+					asset.Invested) * 100
 
-	p.TotalCost = totalCost
+		}
 
-	p.TotalMarketValue = totalValue
+		invested +=
+			asset.Invested
 
-	p.TotalGain = totalGain
-
-	if totalCost > 0 {
-
-		p.TotalGainPercent =
-			(totalGain / totalCost) * 100
-
-	} else {
-
-		p.TotalGainPercent = 0
+		value +=
+			asset.MarketValue
 
 	}
 
-}
+	p.TotalInvested =
+		invested
 
-// calculateInvested calcola il capitale iniziale investito
-//
-// ETF / Stock / Crypto:
-// quantità × prezzo medio
-//
-// Bond:
-// valore nominale × prezzo medio / 100
-func calculateInvested(a models.Asset) float64 {
+	p.TotalValue =
+		value
 
-	switch a.Type {
+	p.TotalGain =
+		value - invested
 
-	case models.Bond:
+	if invested != 0 {
 
-		return a.Quantity * a.AvgCost / 100
-
-	default:
-
-		return a.Quantity * a.AvgCost
-
-	}
-
-}
-
-// calculateMarketValue calcola il valore attuale.
-//
-// ETF / Stock / Crypto:
-// quantità × prezzo attuale
-//
-// Bond:
-// valore nominale × prezzo mercato / 100
-func calculateMarketValue(a models.Asset) float64 {
-
-	switch a.Type {
-
-	case models.Bond:
-
-		return a.Quantity * a.LastPrice / 100
-
-	default:
-
-		return a.Quantity * a.LastPrice
+		p.GainPercent =
+			(p.TotalGain /
+				invested) * 100
 
 	}
 

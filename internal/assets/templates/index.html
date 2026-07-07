@@ -1,86 +1,165 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="it">
 
 <head>
 
 <meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>PortfolioMenu</title>
 
 
 <script src="https://cdn.tailwindcss.com"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+
+<script>
+
+tailwind.config = {
+    darkMode: 'class'
+}
+
+</script>
+
 
 </head>
 
 
-<body class="bg-gray-100 p-8">
+
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-6">
 
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-7xl mx-auto">
 
 
-<h1 class="text-3xl font-bold mb-6">
+
+<!-- HEADER -->
+
+<div class="flex justify-between items-center mb-8">
+
+
+<h1 class="text-3xl font-bold">
 PortfolioMenu
 </h1>
 
 
 
-<div class="grid grid-cols-4 gap-4 mb-8">
+<div class="flex gap-3">
 
 
-<div class="bg-white rounded shadow p-4">
+<button
+onclick="toggleDark()"
+class="px-4 py-2 rounded bg-gray-800 text-white">
 
-<div class="text-gray-500">
-Valore totale
+🌙
+
+</button>
+
+
+
+<button
+hx-get="/dashboard"
+hx-target="#portfolio-dashboard"
+hx-swap="outerHTML"
+class="px-4 py-2 rounded bg-blue-600 text-white">
+
+🔄 Refresh
+
+</button>
+
+
+
 </div>
 
-<div class="text-2xl font-bold">
+
+</div>
+
+
+
+
+
+
+<!-- DASHBOARD DINAMICA -->
+
+<div id="portfolio-dashboard"
+hx-get="/dashboard"
+hx-trigger="every 300s"
+hx-swap="outerHTML">
+
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+
+
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+
+<p class="text-gray-500">
+Valore Portfolio
+</p>
+
+<h2 class="text-3xl font-bold">
+
 {{printf "%.2f" .TotalValue}} €
-</div>
+
+</h2>
 
 </div>
 
 
 
-<div class="bg-white rounded shadow p-4">
 
-<div class="text-gray-500">
-Capitale investito
-</div>
 
-<div class="text-2xl font-bold">
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+
+<p class="text-gray-500">
+Capitale Investito
+</p>
+
+<h2 class="text-3xl font-bold">
+
 {{printf "%.2f" .TotalInvested}} €
-</div>
+
+</h2>
 
 </div>
 
 
 
-<div class="bg-white rounded shadow p-4">
 
-<div class="text-gray-500">
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+
+<p class="text-gray-500">
 Gain/Loss
-</div>
+</p>
 
-<div class="text-2xl font-bold">
+<h2 class="text-3xl font-bold">
+
 {{printf "%.2f" .TotalGain}} €
-</div>
+
+</h2>
 
 </div>
 
 
 
-<div class="bg-white rounded shadow p-4">
 
-<div class="text-gray-500">
-Rendimento
-</div>
 
-<div class="text-2xl font-bold">
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+
+<p class="text-gray-500">
+Performance
+</p>
+
+<h2 class="text-3xl font-bold">
+
 {{printf "%.2f" .GainPercent}} %
-</div>
+
+</h2>
 
 </div>
 
@@ -88,56 +167,229 @@ Rendimento
 </div>
 
 
+</div>
 
-<table class="bg-white shadow rounded w-full">
 
 
-<tr class="border">
 
-<th class="p-2">
+
+
+
+
+<!-- CHARTS -->
+
+
+<div class="grid md:grid-cols-2 gap-6 mb-8">
+
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+
+
+<h2 class="text-xl font-bold mb-4">
+Asset Allocation
+</h2>
+
+
+<div class="max-w-xs mx-auto">
+
+<canvas id="allocationChart"></canvas>
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+
+
+<h2 class="text-xl font-bold mb-4">
+Gain/Loss per Asset
+</h2>
+
+
+<canvas id="gainChart"></canvas>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+<!-- TABLE -->
+
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-x-auto">
+
+
+
+<table class="w-full text-sm">
+
+
+
+<thead class="bg-gray-200 dark:bg-gray-700">
+
+
+<tr>
+
+
+<th class="p-3">
 Ticker
 </th>
+
 
 <th>
 Tipo
 </th>
 
+
+<th>
+Broker
+</th>
+
+
+<th>
+Quantità
+</th>
+
+
+<th>
+PMC
+</th>
+
+
+<th>
+Investito
+</th>
+
+
+<th>
+Prezzo
+</th>
+
+
 <th>
 Valore
 </th>
 
+
 <th>
-Gain
+Gain/Loss
+</th>
+
+
+<th>
+%
 </th>
 
 
 </tr>
 
 
+</thead>
+
+
+
+
+<tbody>
+
+
 
 {{range .Assets}}
 
-<tr class="border text-center">
+
+<tr class="border-t dark:border-gray-700 text-center">
 
 
-<td class="p-2 font-bold">
+
+<td class="p-3 font-bold">
+
 {{.Ticker}}
+
 </td>
 
 
+
 <td>
+
 {{.Type}}
+
 </td>
+
 
 
 <td>
-{{printf "%.2f" .MarketValue}} €
+
+{{.Broker}}
+
 </td>
+
 
 
 <td>
-{{printf "%.2f" .GainLoss}} €
+
+{{printf "%.4f" .Quantity}}
+
 </td>
+
+
+
+<td>
+
+{{printf "%.2f" .AvgCost}}
+
+</td>
+
+
+
+<td>
+
+{{printf "%.2f" .Invested}}
+
+</td>
+
+
+
+<td>
+
+{{printf "%.2f" .LastPrice}}
+
+</td>
+
+
+
+<td>
+
+{{printf "%.2f" .MarketValue}}
+
+</td>
+
+
+
+<td>
+
+{{printf "%.2f" .GainLoss}}
+
+</td>
+
+
+
+<td>
+
+{{printf "%.2f" .GainPercent}} %
+
+</td>
+
 
 
 </tr>
@@ -146,10 +398,246 @@ Gain
 {{end}}
 
 
+
+</tbody>
+
+
+
 </table>
 
 
 </div>
+
+
+
+
+
+
+<p class="mt-5 text-sm text-gray-500">
+
+Ultimo aggiornamento:
+
+{{.LastUpdate}}
+
+</p>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+<script>
+
+
+function toggleDark(){
+
+document.documentElement.classList.toggle(
+"dark"
+);
+
+}
+
+
+
+
+
+
+fetch("/api/charts")
+
+.then(response => response.json())
+
+.then(data => {
+
+
+
+new Chart(
+
+document.getElementById(
+"allocationChart"
+),
+
+{
+
+type:"doughnut",
+
+
+data:{
+
+
+labels:Object.keys(data.allocation),
+
+
+datasets:[{
+
+data:Object.values(data.allocation),
+
+
+backgroundColor:
+
+
+Object.keys(data.allocation).map(type => {
+
+
+if(type==="ETF")
+return "#22c55e";
+
+
+if(type==="Bond")
+return "#3b82f6";
+
+
+if(type==="Crypto")
+return "#f97316";
+
+
+return "#9ca3af";
+
+
+})
+
+
+
+}]
+
+},
+
+
+
+options:{
+
+
+cutout:"65%",
+
+
+plugins:{
+
+
+legend:{
+
+
+position:"bottom"
+
+
+},
+
+
+
+tooltip:{
+
+
+callbacks:{
+
+
+label:function(context){
+
+
+let total =
+context.dataset.data.reduce(
+(a,b)=>a+b,
+0
+);
+
+
+let percent =
+(
+context.raw /
+total *
+100
+).toFixed(1);
+
+
+
+return context.raw.toLocaleString(
+"it-IT",
+{
+style:"currency",
+currency:"EUR"
+}
+)
++
+" ("+
+percent+
+"%)";
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+}
+
+);
+
+
+
+
+
+
+
+new Chart(
+
+document.getElementById(
+"gainChart"
+),
+
+{
+
+
+type:"bar",
+
+
+data:{
+
+
+labels:data.names,
+
+
+datasets:[{
+
+label:"Gain/Loss €",
+
+data:data.gains
+
+}]
+
+
+}
+
+
+}
+
+);
+
+
+
+});
+
+
+
+</script>
+
 
 
 </body>

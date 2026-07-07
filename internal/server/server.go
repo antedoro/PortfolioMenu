@@ -2,7 +2,7 @@ package server
 
 import (
 	"embed"
-	"fmt"
+	"encoding/json"
 	"html/template"
 	"net/http"
 
@@ -49,7 +49,17 @@ func (s *Server) Start(
 		s.index,
 	)
 
-	fmt.Println(
+	mux.HandleFunc(
+		"/dashboard",
+		s.dashboard,
+	)
+
+	mux.HandleFunc(
+		"/api/charts",
+		s.charts,
+	)
+
+	println(
 		"Dashboard running:",
 		"http://"+address,
 	)
@@ -77,14 +87,14 @@ func (s *Server) index(
 	r *http.Request,
 ) {
 
-	portfolio :=
+	p :=
 		s.Updater.Get()
 
 	err :=
 		s.Templates.ExecuteTemplate(
 			w,
 			"index.html",
-			portfolio,
+			p,
 		)
 
 	if err != nil {
@@ -96,5 +106,96 @@ func (s *Server) index(
 		)
 
 	}
+
+}
+
+// Endpoint HTMX
+// aggiorna solo il blocco dashboard
+
+func (s *Server) dashboard(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	p :=
+		s.Updater.Get()
+
+	err :=
+		s.Templates.ExecuteTemplate(
+			w,
+			"dashboard.html",
+			p,
+		)
+
+	if err != nil {
+
+		http.Error(
+			w,
+			err.Error(),
+			http.StatusInternalServerError,
+		)
+
+	}
+
+}
+
+func (s *Server) charts(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	p :=
+		s.Updater.Get()
+
+	allocation :=
+		make(map[string]float64)
+
+	var names []string
+
+	var gains []float64
+
+	for _, asset := range p.Assets {
+
+		allocation[string(asset.Type)] +=
+			asset.MarketValue
+
+		names =
+			append(
+				names,
+				asset.Ticker,
+			)
+
+		gains =
+			append(
+				gains,
+				asset.GainLoss,
+			)
+
+	}
+
+	response :=
+		struct {
+			Allocation map[string]float64 `json:"allocation"`
+
+			Names []string `json:"names"`
+
+			Gains []float64 `json:"gains"`
+		}{
+
+			Allocation: allocation,
+
+			Names: names,
+
+			Gains: gains,
+		}
+
+	w.Header().
+		Set(
+			"Content-Type",
+			"application/json",
+		)
+
+	json.NewEncoder(w).
+		Encode(response)
 
 }
