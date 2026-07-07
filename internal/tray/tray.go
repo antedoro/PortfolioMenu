@@ -91,15 +91,11 @@ func (t *Tray) onReady() {
 
 			case <-openDashboard.ClickedCh:
 
-				openURL(
-					"http://localhost:8080",
-				)
+				openURL("http://localhost:8080")
 
 			case <-editConfig.ClickedCh:
 
-				openFile(
-					"configs/portfoliomenu.toml",
-				)
+				openFile("configs/portfoliomenu.toml")
 
 			case <-checkUpdate.ClickedCh:
 
@@ -112,7 +108,6 @@ func (t *Tray) onReady() {
 			case <-quit.ClickedCh:
 
 				systray.Quit()
-
 				return
 
 			}
@@ -138,9 +133,7 @@ func (t *Tray) updateTitle() {
 			t.Updater.Get()
 
 		if len(p.Assets) == 0 {
-
 			continue
-
 		}
 
 		if t.index >= len(p.Assets) {
@@ -152,11 +145,8 @@ func (t *Tray) updateTitle() {
 		a :=
 			p.Assets[t.index]
 
-		title :=
-			formatTitle(a)
-
 		systray.SetTitle(
-			title,
+			formatTitle(a),
 		)
 
 		t.index++
@@ -169,11 +159,12 @@ func formatTitle(
 	a models.Asset,
 ) string {
 
-	name := a.Name
+	name := a.Ticker
 
-	if len(name) > 7 {
+	// fallback se ticker vuoto
+	if name == "" {
 
-		name = name[:7]
+		name = a.Name
 
 	}
 
