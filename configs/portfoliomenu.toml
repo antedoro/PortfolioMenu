@@ -74,6 +74,6 @@ broker = "Binance"
 symbol = "BTC-USD"
 yahoo_symbol = "BTC-USD"
 isin_bond = ""
-quantity = 0.0045
+quantity = 0.0239652
 avg_cost = 54000
 manual_price = 0
