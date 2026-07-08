@@ -15,6 +15,58 @@ manual_price = 0
 
 [[assets]]
 id = 2
+name = "XEON"
+ticker = "XEON"
+type = "ETF"
+broker = "Fineco"
+symbol = "XEON.DE"
+yahoo_symbol = "XEON.DE"
+isin_bond = ""
+quantity = 43
+avg_cost = 149.4508
+manual_price = 0
+
+[[assets]]
+id = 3
+name = "OAT 2027"
+ticker = "OAT27"
+type = "Bond"
+broker = "Directa"
+symbol = "FR0013250560"
+yahoo_symbol = ""
+isin_bond = "FR0013250560"
+quantity = 250
+avg_cost = 98.612
+manual_price = 0
+
+[[assets]]
+id = 4
+name = "BTP 2028"
+ticker = "BTP28"
+type = "Bond"
+broker = "Directa"
+symbol = "IT0005641029"
+yahoo_symbol = ""
+isin_bond = "IT0005641029"
+quantity = 250
+avg_cost = 99.91
+manual_price = 0
+
+[[assets]]
+id = 5
+name = "BTP 2030"
+ticker = "BTP30"
+type = "Bond"
+broker = "Directa"
+symbol = "IT0005383309"
+yahoo_symbol = ""
+isin_bond = "IT0005383309"
+quantity = 250
+avg_cost = 94.73
+manual_price = 0
+
+[[assets]]
+id = 6
 name = "Bitcoin"
 ticker = "BTC"
 type = "Crypto"
@@ -24,17 +76,4 @@ yahoo_symbol = "BTC-USD"
 isin_bond = ""
 quantity = 0.0045
 avg_cost = 54000
-manual_price = 0
-
-[[assets]]
-id = 3
-name = "BTP 2030"
-ticker = "BTP30"
-type = "Bond"
-broker = "Fineco"
-symbol = "IT0005425761"
-yahoo_symbol = ""
-isin_bond = "IT0005425761"
-quantity = 250
-avg_cost = 98.5
 manual_price = 0
