@@ -2,27 +2,31 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
-	RefreshMinutes int           `toml:"refresh_minutes"`
-	Assets         []AssetConfig `toml:"assets"`
+	RefreshMinutes  int    `toml:"refresh_minutes"`
+	Theme           string `toml:"theme"`
+	DefaultBroker   string `toml:"default_broker"`
+	DefaultProvider string `toml:"default_provider"`
+	Proxy           string `toml:"proxy"`
+	CacheMinutes    int    `toml:"cache_minutes"`
+	FilePath        string `toml:"-"`
+	// DataFile percorso del file portfolio (TOML/JSON).
+	DataFile string `toml:"data_file"`
+
+	// Impostazioni dell'applicazione (non sono asset).
+	Settings AppSettings `toml:"settings"`
 }
 
-type AssetConfig struct {
-	ID          int     `toml:"id"`
-	Name        string  `toml:"name"`
-	Ticker      string  `toml:"ticker"`
-	Type        string  `toml:"type"`
-	Broker      string  `toml:"broker"`
-	Symbol      string  `toml:"symbol"`
-	YahooSymbol string  `toml:"yahoo_symbol"`
-	ISINBond    string  `toml:"isin_bond"`
-	Quantity    float64 `toml:"quantity"`
-	AvgCost     float64 `toml:"avg_cost"`
-	ManualPrice float64 `toml:"manual_price"`
+type AppSettings struct {
+	DarkMode      bool     `toml:"dark_mode"`
+	Language      string   `toml:"language"`
+	BaseCurrency  string   `toml:"base_currency"`
+	MenubarFormat []string `toml:"menubar_format"`
 }
 
 func Load(filename string) (*Config, error) {
@@ -33,22 +37,52 @@ func Load(filename string) (*Config, error) {
 		return nil, err
 	}
 
+	cfg.FilePath = filename
+
 	if cfg.RefreshMinutes <= 0 {
 		cfg.RefreshMinutes = 15
 	}
 
-	for _, a := range cfg.Assets {
+	if cfg.Theme == "" {
+		cfg.Theme = "light"
+	}
 
-		if a.Name == "" {
-			return nil, fmt.Errorf("asset without name")
-		}
+	if cfg.DataFile == "" {
+		cfg.DataFile = "configs/portfolio.toml"
+	}
 
-		if a.Quantity <= 0 {
-			return nil, fmt.Errorf("%s: quantity must be > 0", a.Name)
-		}
+	if cfg.CacheMinutes <= 0 {
+		cfg.CacheMinutes = 60
+	}
 
+	if cfg.Settings.Language == "" {
+		cfg.Settings.Language = "it"
+	}
+
+	if cfg.Settings.BaseCurrency == "" {
+		cfg.Settings.BaseCurrency = "EUR"
+	}
+
+	if len(cfg.Settings.MenubarFormat) == 0 {
+		cfg.Settings.MenubarFormat = []string{"ticker", "value", "percent", "gainloss"}
 	}
 
 	return &cfg, nil
 
+}
+
+// SaveFile persiste la configurazione su disco.
+func (c *Config) SaveFile(filename string) error {
+
+	if filename == "" {
+		return fmt.Errorf("nome file vuoto")
+	}
+
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return toml.NewEncoder(f).Encode(c)
 }

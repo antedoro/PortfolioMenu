@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="it" {{if .DarkMode}}class="dark"{{end}}>
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurazione Menubar</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+tailwind.config = { darkMode: 'class' }
+</script>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-6 min-h-screen">
+
+{{template "navbar" .}}
+
+<div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+	<div class="flex justify-between items-center mb-6">
+		<h1 class="text-2xl font-bold">Configurazione Menubar</h1>
+	</div>
+
+	<p class="mb-4 text-gray-600 dark:text-gray-400">
+		Trascina gli elementi per scegliere l'ordine di visualizzazione nella menubar del Mac.
+		Puoi anche trascinare gli elementi fuori per nasconderli.
+	</p>
+
+	<div class="grid grid-cols-2 gap-8">
+		
+		<div>
+			<h3 class="font-bold mb-2">Visibili nella Menubar</h3>
+			<ul id="active-list" class="min-h-[150px] p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+			</ul>
+		</div>
+
+		<div>
+			<h3 class="font-bold mb-2">Elementi Nascosti</h3>
+			<ul id="hidden-list" class="min-h-[150px] p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+			</ul>
+		</div>
+
+	</div>
+
+	<div class="mt-8 flex gap-4">
+		<button onclick="save()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+			Salva Configurazione
+		</button>
+		
+		<button onclick="presetDefault()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
+			Preset: Completo (Es: XEON: 6645€ (+0,34%) +27€)
+		</button>
+
+		<button onclick="presetMinimal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
+			Preset: Solo Prezzo
+		</button>
+	</div>
+
+	<div id="toast" class="hidden mt-4 p-3 bg-green-100 text-green-700 rounded border border-green-200">
+		Configurazione salvata con successo!
+	</div>
+</div>
+
+<script>
+	const allItems = [
+		{ id: "ticker", label: "Ticker (es. XEON)" },
+		{ id: "value", label: "Quotazione (es. 6645€)" },
+		{ id: "percent", label: "Variazione % (es. +0,34%)" },
+		{ id: "gainloss", label: "Gain/Loss (es. +27€)" }
+	];
+
+	let currentFormat = {{.MenubarFormatJSON}};
+
+	function renderLists() {
+		const active = document.getElementById("active-list");
+		const hidden = document.getElementById("hidden-list");
+		active.innerHTML = "";
+		hidden.innerHTML = "";
+
+		const itemMap = {};
+		allItems.forEach(i => itemMap[i.id] = i);
+
+		currentFormat.forEach(id => {
+			if(itemMap[id]) {
+				active.appendChild(createListItem(itemMap[id]));
+				delete itemMap[id];
+			}
+		});
+
+		Object.values(itemMap).forEach(item => {
+			hidden.appendChild(createListItem(item));
+		});
+	}
+
+	function createListItem(item) {
+		const li = document.createElement("li");
+		li.dataset.id = item.id;
+		li.className = "p-3 mb-2 bg-white dark:bg-gray-600 rounded shadow cursor-move border border-gray-100 dark:border-gray-500 flex items-center";
+		li.innerHTML = `
+			<svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+			${item.label}
+		`;
+		return li;
+	}
+
+	renderLists();
+
+	new Sortable(document.getElementById('active-list'), {
+		group: 'shared',
+		animation: 150
+	});
+
+	new Sortable(document.getElementById('hidden-list'), {
+		group: 'shared',
+		animation: 150
+	});
+
+	function presetDefault() {
+		currentFormat = ["ticker", "value", "percent", "gainloss"];
+		renderLists();
+	}
+
+	function presetMinimal() {
+		currentFormat = ["ticker", "value"];
+		renderLists();
+	}
+
+	async function save() {
+		const activeList = document.getElementById("active-list");
+		const format = Array.from(activeList.children).map(li => li.dataset.id);
+
+		const res = await fetch("/api/config/menubar", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ format })
+		});
+
+		if(res.ok) {
+			const toast = document.getElementById("toast");
+			toast.classList.remove("hidden");
+			setTimeout(() => toast.classList.add("hidden"), 3000);
+		} else {
+			alert("Errore durante il salvataggio.");
+		}
+	}
+</script>
+
+</body>
+</html>

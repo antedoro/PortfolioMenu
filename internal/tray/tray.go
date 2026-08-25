@@ -4,28 +4,26 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/getlantern/systray"
 
 	"github.com/antedoro/PortfolioMenu/internal/models"
-	"github.com/antedoro/PortfolioMenu/internal/portfolio"
+	"github.com/antedoro/PortfolioMenu/internal/services"
+	"github.com/antedoro/PortfolioMenu/internal/utils"
 )
 
 type Tray struct {
-	Updater *portfolio.Updater
-
+	svc   *services.Service
 	index int
 }
 
 func New(
-	updater *portfolio.Updater,
+	svc *services.Service,
 ) *Tray {
 
-	return &Tray{
-		Updater: updater,
-	}
-
+	return &Tray{svc: svc}
 }
 
 func (t *Tray) Run() {
@@ -34,23 +32,23 @@ func (t *Tray) Run() {
 		t.onReady,
 		t.onExit,
 	)
-
 }
 
 func (t *Tray) onReady() {
 
-	systray.SetTitle(
-		"PortfolioMenu",
-	)
-
-	systray.SetTooltip(
-		"PortfolioMenu",
-	)
+	systray.SetTitle("PortfolioMenu")
+	systray.SetTooltip("PortfolioMenu")
 
 	openDashboard :=
 		systray.AddMenuItem(
 			"Open Dashboard",
 			"Apri dashboard web",
+		)
+
+	refresh :=
+		systray.AddMenuItem(
+			"Refresh",
+			"Aggiorna prezzi",
 		)
 
 	editConfig :=
@@ -60,12 +58,6 @@ func (t *Tray) onReady() {
 		)
 
 	systray.AddSeparator()
-
-	checkUpdate :=
-		systray.AddMenuItem(
-			"Check for Update...",
-			"Aggiornamenti",
-		)
 
 	about :=
 		systray.AddMenuItem(
@@ -90,23 +82,25 @@ func (t *Tray) onReady() {
 			select {
 
 			case <-openDashboard.ClickedCh:
+				utils.OpenBrowser(
+					"http://localhost:8080",
+				)
 
-				openURL("http://localhost:8080")
+			case <-refresh.ClickedCh:
+				go t.svc.Refresh()
 
 			case <-editConfig.ClickedCh:
-
-				openFile("configs/portfoliomenu.toml")
-
-			case <-checkUpdate.ClickedCh:
-
-				fmt.Println("Check update")
+				utils.OpenBrowser(
+					"http://localhost:8080/config",
+				)
 
 			case <-about.ClickedCh:
-
-				fmt.Println("PortfolioMenu")
+				utils.OpenBrowser(
+					"http://localhost:8080/about",
+				)
 
 			case <-quit.ClickedCh:
-
+				t.svc.Stop()
 				systray.Quit()
 				return
 
@@ -120,96 +114,80 @@ func (t *Tray) onReady() {
 
 func (t *Tray) updateTitle() {
 
-	ticker :=
-		time.NewTicker(
-			10 * time.Second,
-		)
-
-	defer ticker.Stop()
-
-	for range ticker.C {
-
-		p :=
-			t.Updater.Get()
-
+	update := func() {
+		p := t.svc.Get()
 		if len(p.Assets) == 0 {
-			continue
+			return
 		}
 
 		if t.index >= len(p.Assets) {
-
 			t.index = 0
-
 		}
 
-		a :=
-			p.Assets[t.index]
+		a := p.Assets[t.index]
+		systray.SetTitle(formatTitle(a, t.svc.MenubarFormat()))
+	}
 
-		systray.SetTitle(
-			formatTitle(a),
-		)
+	update()
 
-		t.index++
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
+	ticks := 0
+	for range ticker.C {
+		ticks++
+		if ticks % 10 == 0 {
+			t.index++
+		}
+		update()
 	}
 
 }
 
 func formatTitle(
 	a models.Asset,
+	format []string,
 ) string {
 
 	name := a.Ticker
-
-	// fallback se ticker vuoto
 	if name == "" {
-
 		name = a.Name
-
 	}
 
-	value :=
-		int(a.MarketValue)
+	var result strings.Builder
 
-	gain :=
-		int(a.GainLoss)
+	for i, f := range format {
+		
+		if i > 0 {
+			if f == "percent" && format[i-1] == "value" {
+				// No space between value and percent
+			} else {
+				result.WriteString(" ")
+			}
+		}
 
-	return fmt.Sprintf(
-		"%-7s %7d€ %+6d€ %+7.2f%%",
-		name+":",
-		value,
-		gain,
-		a.GainPercent,
-	)
+		switch f {
+		case "ticker":
+			result.WriteString(name + ":")
+		case "value":
+			result.WriteString(fmt.Sprintf("%d€", int(a.MarketValue)))
+		case "percent":
+			percentStr := fmt.Sprintf("%+.2f%%", a.GainPercent)
+			percentStr = strings.Replace(percentStr, ".", ",", 1)
+			result.WriteString("(" + percentStr + ")")
+		case "gainloss":
+			result.WriteString(fmt.Sprintf("%+d€", int(a.GainLoss)))
+		}
+	}
 
+	return result.String()
 }
 
 func openURL(url string) {
-
 	if runtime.GOOS == "darwin" {
-
-		exec.Command(
-			"open",
-			url,
-		).Start()
-
+		exec.Command("open", url).Start()
 	}
-
-}
-
-func openFile(file string) {
-
-	if runtime.GOOS == "darwin" {
-
-		exec.Command(
-			"open",
-			file,
-		).Start()
-
-	}
-
 }
 
 func (t *Tray) onExit() {
-
 }

@@ -1,0 +1,7 @@
+configs/portfolio.toml
+configs/history.json
+.DS_Store
+web/.DS_Store
+internal/.DS_Store
+build/
+.gocache/

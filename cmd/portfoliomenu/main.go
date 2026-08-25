@@ -3,220 +3,108 @@ package main
 import (
 	"fmt"
 	"log"
-	"time"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/antedoro/PortfolioMenu/internal/assets"
 	"github.com/antedoro/PortfolioMenu/internal/config"
-	"github.com/antedoro/PortfolioMenu/internal/models"
-	"github.com/antedoro/PortfolioMenu/internal/portfolio"
-	"github.com/antedoro/PortfolioMenu/internal/providers"
 	"github.com/antedoro/PortfolioMenu/internal/server"
+	"github.com/antedoro/PortfolioMenu/internal/services"
 	"github.com/antedoro/PortfolioMenu/internal/tray"
 )
 
+// baseDir restituisce la directory di riferimento:
+// se l'eseguibile è dentro un .app bundle usa la sua cartella
+// MacOS (la working directory sarebbe "/"), altrimenti la cwd.
+func baseDir() string {
+
+	if exe, err := os.Executable(); err == nil {
+
+		if strings.Contains(
+			exe,
+			".app/Contents/MacOS",
+		) {
+			return filepath.Dir(exe)
+		}
+
+	}
+
+	return "."
+}
+
+// locate trova un file esistente (config).
+func locate(rel string) string {
+
+	candidates := []string{
+		filepath.Join(baseDir(), rel),
+		rel,
+	}
+
+	for _, c := range candidates {
+		if _, err := os.Stat(c); err == nil {
+			return c
+		}
+	}
+
+	return candidates[0]
+}
+
+// locateNew risolve il percorso di un file da creare, ancorandolo
+// alla base se la sua cartella esiste già.
+func locateNew(rel string) string {
+
+	bd := filepath.Join(baseDir(), rel)
+
+	if st, err := os.Stat(filepath.Dir(bd)); err == nil &&
+		st.IsDir() {
+		return bd
+	}
+
+	return rel
+}
+
 func main() {
 
-	cfg, err := config.Load(
+	cfgPath := locate(
 		"configs/portfoliomenu.toml",
 	)
 
+	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	cfg.DataFile = locateNew(cfg.DataFile)
+
 	fmt.Println()
 	fmt.Println("PortfolioMenu")
 	fmt.Println("========================================")
-
 	fmt.Printf(
 		"Refresh ogni %d minuti\n",
 		cfg.RefreshMinutes,
 	)
+	fmt.Printf("File dati: %s\n", cfg.DataFile)
 
-	p := buildPortfolio(cfg)
+	svc := services.New(cfg)
+	if err := svc.Load(); err != nil {
+		log.Fatal(err)
+	}
 
-	portfolio.Calculate(&p)
+	svc.Start(cfg.RefreshMinutes)
 
-	updater :=
-		portfolio.NewUpdater(
-			&p,
-			cfg.RefreshMinutes,
-		)
+	fmt.Println("Portfolio updater avviato")
 
-	updater.Start()
-
-	fmt.Println(
-		"Portfolio updater avviato",
+	webServer := server.New(
+		svc,
+		assets.Templates,
 	)
-
-	webServer :=
-		server.New(
-			updater,
-			assets.Templates,
-		)
-
-	webServer.Start(
-		"localhost:8080",
-	)
+	webServer.Start("localhost:8080")
 
 	fmt.Println(
 		"Dashboard disponibile su http://localhost:8080",
 	)
 
-	appTray :=
-		tray.New(
-			updater,
-		)
-
+	appTray := tray.New(svc)
 	appTray.Run()
-
-}
-
-func buildPortfolio(
-	cfg *config.Config,
-) models.Portfolio {
-
-	var p models.Portfolio
-
-	for _, a := range cfg.Assets {
-
-		asset :=
-			models.Asset{
-
-				ID: a.ID,
-
-				Name: a.Name,
-
-				Ticker: a.Ticker,
-
-				Type: models.AssetType(a.Type),
-
-				Broker: a.Broker,
-
-				Symbol: a.Symbol,
-
-				YahooSymbol: a.YahooSymbol,
-
-				ISINBond: a.ISINBond,
-
-				Quantity: a.Quantity,
-
-				AvgCost: a.AvgCost,
-
-				ManualPrice: a.ManualPrice,
-
-				Currency: "EUR",
-
-				CurrencySymbol: "€",
-
-				LastUpdate: time.Now(),
-			}
-
-		// Crypto quotate in USD
-
-		if asset.Type == models.Crypto {
-
-			asset.Currency = "USD"
-
-			asset.CurrencySymbol = "$"
-
-		}
-
-		switch {
-
-		// Prezzo inserito manualmente
-
-		case asset.ManualPrice > 0:
-
-			provider :=
-				providers.NewManualProvider()
-
-			err :=
-				provider.GetPrice(
-					&asset,
-				)
-
-			if err != nil {
-
-				fmt.Println(
-					"Errore prezzo manuale:",
-					err,
-				)
-
-			}
-
-		// Bond Borsa Italiana
-
-		case asset.Type == models.Bond &&
-			asset.ISINBond != "":
-
-			provider :=
-				providers.NewBorsaProvider()
-
-			err :=
-				provider.GetPrice(
-					&asset,
-				)
-
-			if err != nil {
-
-				fmt.Println(
-					"Errore Borsa Italiana:",
-					asset.Name,
-					err,
-				)
-
-			}
-
-		// Yahoo Finance
-
-		case asset.YahooSymbol != "":
-
-			provider :=
-				providers.NewYahooProvider()
-
-			err :=
-				provider.GetPrice(
-					&asset,
-				)
-
-			if err != nil {
-
-				fmt.Println(
-					"Errore Yahoo:",
-					asset.Name,
-					err,
-				)
-
-			}
-
-		}
-
-		p.Assets =
-			append(
-				p.Assets,
-				asset,
-			)
-
-	}
-
-	// Cambio EUR/USD
-
-	currency :=
-		providers.NewCurrencyProvider()
-
-	rate, err :=
-		currency.GetEURUSD()
-
-	if err == nil {
-
-		p.ExchangeRate = rate
-
-	}
-
-	p.LastUpdate =
-		time.Now()
-
-	return p
-
 }

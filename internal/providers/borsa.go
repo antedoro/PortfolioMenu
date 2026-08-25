@@ -27,13 +27,13 @@ func NewBorsaProvider() *BorsaProvider {
 
 func (b *BorsaProvider) GetPrice(asset *models.Asset) error {
 
-	if asset.ISINBond == "" {
+	if asset.ISIN == "" {
 		return fmt.Errorf("ISIN bond mancante")
 	}
 
 	url := fmt.Sprintf(
 		"https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/scheda/%s-MOTX.html?lang=it",
-		asset.ISINBond,
+		asset.ISIN,
 	)
 
 	req, err := http.NewRequest(
@@ -86,7 +86,7 @@ func (b *BorsaProvider) GetPrice(asset *models.Asset) error {
 
 		return fmt.Errorf(
 			"prezzo non trovato per %s",
-			asset.ISINBond,
+			asset.ISIN,
 		)
 
 	}

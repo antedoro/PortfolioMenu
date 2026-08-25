@@ -1,645 +1,508 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" {{if .DarkMode}}class="dark"{{end}}>
 
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>PortfolioMenu</title>
 
-
 <script src="https://cdn.tailwindcss.com"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 
-
 <script>
-
-tailwind.config = {
-    darkMode: 'class'
-}
-
+tailwind.config = { darkMode: 'class' }
 </script>
-
 
 </head>
 
-
-
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-6">
 
+{{template "navbar" .}}
 
 <div class="max-w-7xl mx-auto">
 
+{{template "header" .}}
 
-
-<!-- HEADER -->
-
-<div class="flex justify-between items-center mb-8">
-
-
-<h1 class="text-3xl font-bold">
-PortfolioMenu
-</h1>
-
-
-
-<div class="flex gap-3">
-
-
-<button
-onclick="toggleDark()"
-class="px-4 py-2 rounded bg-gray-800 text-white">
-
-🌙
-
-</button>
-
-
-
-<button
-hx-get="/dashboard"
-hx-target="#portfolio-dashboard"
-hx-swap="outerHTML"
-class="px-4 py-2 rounded bg-blue-600 text-white">
-
-🔄 Refresh
-
-</button>
-
-
-
+<div id="dashboard">
+{{template "all" .}}
 </div>
 
-
-</div>
-
-
-
-
-
-
-<!-- DASHBOARD DINAMICA -->
-
-<div id="portfolio-dashboard"
-hx-get="/dashboard"
-hx-trigger="every 300s"
-hx-swap="outerHTML">
-
-
-<div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-
-
-
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-
-<p class="text-gray-500">
-Valore Portfolio
+<p class="mt-6 text-sm text-gray-500">
+Ultimo aggiornamento:
+{{.Portfolio.LastUpdate.Format "02/01/2006 15:04"}} ·
+Cambio EUR/USD: {{printf "%.4f" .Portfolio.ExchangeRate}} ·
+File: {{.DataFile}}
 </p>
 
-<h2 class="text-3xl font-bold">
-
-{{printf "%.2f" .TotalValue}} €
-
-</h2>
-
 </div>
 
+<!-- MODALE ASSET -->
+<div id="asset-modal"
+     class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
 
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold" id="modal-title">Nuovo Asset</h2>
+      <button onclick="closeModal()" class="text-gray-500 text-2xl">&times;</button>
+    </div>
 
+    <form id="asset-form"
+          hx-post="/api/assets"
+          hx-target="#dashboard"
+          hx-swap="innerHTML"
+          hx-on::after-request="closeModal()">
 
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+      <input type="hidden" name="id" id="f-id" value="0">
 
-<p class="text-gray-500">
-Capitale Investito
-</p>
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <label class="block">Nome<input name="name" id="f-name" required class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">Ticker<input name="ticker" id="f-ticker" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">Tipo
+          <select name="type" id="f-type" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700">
+            <option value="ETF">ETF</option>
+            <option value="Stock">Azioni</option>
+            <option value="Bond">Obbligazione</option>
+            <option value="Crypto">Crypto</option>
+            <option value="Cash">Liquidità</option>
+          </select>
+        </label>
+        <label class="block">Broker<input name="broker" id="f-broker" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">Simbolo (Yahoo)<input name="yahoo_symbol" id="f-yahoo" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">ISIN<input name="isin" id="f-isin" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">Quantità<input name="quantity" id="f-qty" type="number" step="any" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">PMC<input name="avg_cost" id="f-avg" type="number" step="any" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">Commissioni<input name="fees" id="f-fees" type="number" step="any" value="0" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">Prezzo manuale<input name="manual_price" id="f-manual" type="number" step="any" value="0" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block">Valuta
+          <select name="currency" id="f-cur" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700">
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+          </select>
+        </label>
+        <label class="block">Data acquisto<input name="purchase_date" id="f-date" type="date" class="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-gray-700"></label>
+        <label class="block col-span-2">
+          <input type="checkbox" name="gov_bond" id="f-gov" value="on"> Titolo di Stato (12,5%)
+        </label>
+      </div>
 
-<h2 class="text-3xl font-bold">
+      <div class="flex gap-3 mt-5">
+        <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white">Salva</button>
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded bg-gray-500 text-white">Annulla</button>
+      </div>
 
-{{printf "%.2f" .TotalInvested}} €
+    </form>
 
-</h2>
-
+  </div>
 </div>
 
+<script>
+function toggleDark(){
+  const html = document.documentElement;
+  html.classList.toggle('dark');
+  const dark = html.classList.contains('dark');
+  fetch('/api/settings', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'dark_mode=' + dark
+  });
+}
+
+function openModal(){
+  resetForm();
+  document.getElementById('modal-title').textContent = 'Nuovo Asset';
+  document.getElementById('asset-modal').classList.remove('hidden');
+}
+
+function closeModal(){
+  document.getElementById('asset-modal').classList.add('hidden');
+}
+
+function resetForm(){
+  const f = document.getElementById('asset-form');
+  f.reset();
+  document.getElementById('f-id').value = 0;
+  f.setAttribute('hx-post','/api/assets');
+  f.removeAttribute('hx-put');
+}
+
+function editAsset(id){
+  fetch('/api/assets')
+    .then(r=>r.json())
+    .then(list=>{
+      const a = list.find(x=>x.ID===id);
+      if(!a) return;
+      document.getElementById('modal-title').textContent = 'Modifica ' + a.Name;
+      document.getElementById('f-id').value = a.ID;
+      document.getElementById('f-name').value = a.Name;
+      document.getElementById('f-ticker').value = a.Ticker;
+      document.getElementById('f-type').value = a.Type;
+      document.getElementById('f-broker').value = a.Broker;
+      document.getElementById('f-yahoo').value = a.YahooSymbol;
+      document.getElementById('f-isin').value = a.ISIN;
+      document.getElementById('f-qty').value = a.Quantity;
+      document.getElementById('f-avg').value = a.AvgCost;
+      document.getElementById('f-fees').value = a.Fees;
+      document.getElementById('f-manual').value = a.ManualPrice;
+      document.getElementById('f-cur').value = a.Currency || 'EUR';
+      document.getElementById('f-date').value = a.PurchaseDate || '';
+      document.getElementById('f-gov').checked = a.GovBond;
+      const f = document.getElementById('asset-form');
+      f.setAttribute('hx-put','/api/assets/' + a.ID);
+      f.removeAttribute('hx-post');
+      document.getElementById('asset-modal').classList.remove('hidden');
+    });
+}
+
+let charts = {};
+function renderCharts(){
+  fetch('/api/charts')
+    .then(r=>r.json())
+    .then(data=>{
+      if(charts.alloc) charts.alloc.destroy();
+      if(charts.gain) charts.gain.destroy();
+      if(charts.hist) charts.hist.destroy();
+
+      const allocEl = document.getElementById('allocationChart');
+      if(allocEl){
+        charts.alloc = new Chart(allocEl, {
+          type:'doughnut',
+          data:{
+            labels:Object.keys(data.allocation),
+            datasets:[{ data:Object.values(data.allocation),
+              backgroundColor:Object.keys(data.allocation).map(t=>colorFor(t)) }]
+          },
+          options:{ cutout:'65%', plugins:{ legend:{ position:'bottom' } } }
+        });
+      }
+
+      const gainEl = document.getElementById('gainChart');
+      if(gainEl){
+        charts.gain = new Chart(gainEl, {
+          type:'bar',
+          data:{
+            labels:data.names,
+            datasets:[
+              { label:'Investito €', data:data.invested,
+                backgroundColor:'#3b82f6', stack:'s' },
+              { label:'Gain/Loss €', data:data.gains,
+                backgroundColor:'#ef4444', stack:'s' }
+            ]
+          },
+          options:{
+            scales:{
+              x:{ stacked:true },
+              y:{ stacked:true }
+            }
+          }
+        });
+      }
+
+      const brokerEl = document.getElementById('brokerChart');
+      if(brokerEl){
+        charts.broker = new Chart(brokerEl, {
+          type:'doughnut',
+          data:{
+            labels:Object.keys(data.broker_alloc),
+            datasets:[{ data:Object.values(data.broker_alloc),
+              backgroundColor:Object.keys(data.broker_alloc).map((_,i)=>
+                palette[i % palette.length]) }]
+          },
+          options:{ cutout:'65%', plugins:{ legend:{ position:'bottom' } } }
+        });
+      }
+    });
+}
+
+function colorFor(t){
+  switch(t){
+    case 'ETF': return '#22c55e';
+    case 'Stock': return '#a855f7';
+    case 'Bond': return '#3b82f6';
+    case 'Crypto': return '#f97316';
+    case 'Cash': return '#eab308';
+    default: return '#9ca3af';
+  }
+}
+
+const palette = ['#3b82f6','#22c55e','#f97316','#a855f7','#eab308','#14b8a6','#ec4899','#64748b'];
+
+// Plugin che mostra in modo permanente (senza passare col mouse)
+// il contenuto del tooltip: etichetta, valore e percentuale.
+const fmtEUR = new Intl.NumberFormat(
+  'it-IT', { style:'currency', currency:'EUR' }
+);
+
+const permanentLabels = {
+  id: 'permanentLabels',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    const type = chart.config.type;
+
+    if (type === 'doughnut') {
+      const meta = chart.getDatasetMeta(0);
+      if (meta.hidden) return;
+      const ds = chart.data.datasets[0];
+      const total =
+        ds.data.reduce((a, b) => a + Math.abs(b), 0) || 1;
+      meta.data.forEach((el, i) => {
+        const v = ds.data[i];
+        const pct = (v / total) * 100;
+        const cp = el.getCenterPoint();
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(String(chart.data.labels[i]), cp.x, cp.y - 7);
+        ctx.font = '10px sans-serif';
+        ctx.fillText(
+          fmtEUR.format(v) + ' ' + pct.toFixed(1) + '%',
+          cp.x, cp.y + 6,
+        );
+        ctx.restore();
+      });
+    } else if (type === 'bar') {
+      const n = chart.data.labels.length;
+      const sums = Array(n).fill(0);
+      chart.data.datasets.forEach(ds =>
+        ds.data.forEach((v, i) => { sums[i] += v; }));
+      for (let i = 0; i < n; i++) {
+        let topY = Infinity, x = 0;
+        chart.data.datasets.forEach((ds, di) => {
+          const m = chart.getDatasetMeta(di);
+          if (m.hidden) return;
+          const el = m.data[i];
+          if (el && el.y < topY) { topY = el.y; x = el.x; }
+        });
+        if (topY === Infinity) continue;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = '#374151';
+        ctx.font = '10px sans-serif';
+        ctx.fillText(fmtEUR.format(sums[i]), x, topY - 2);
+        ctx.restore();
+      }
+    }
+  }
+};
+Chart.register(permanentLabels);
+
+document.body.addEventListener('htmx:afterSwap', renderCharts);
+document.addEventListener('DOMContentLoaded', renderCharts);
+renderCharts();
+</script>
+
+</body>
+</html>
 
 
+{{define "header"}}
 
+<div class="flex justify-between items-center mb-6 flex-wrap gap-3">
 
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+  <div>
+    <h1 class="text-2xl font-bold">Riepilogo</h1>
+    <p class="text-gray-500">Valore: {{printf "%.2f" .Portfolio.TotalValue}} € ·
+       Gain: {{printf "%+.2f" .Portfolio.TotalGain}} € ({{printf "%+.2f" .Portfolio.GainPercent}}%)</p>
+  </div>
 
-<p class="text-gray-500">
-Gain/Loss
-</p>
+  <div class="flex gap-2">
+    <button hx-get="/partial/all?refresh=1"
+            hx-target="#dashboard" hx-swap="innerHTML"
+            class="px-4 py-2 rounded bg-blue-600 text-white">🔄 Refresh</button>
 
-<h2 class="text-3xl font-bold">
-
-{{printf "%.2f" .TotalGain}} €
-
-</h2>
+    <button onclick="openModal()"
+            class="px-4 py-2 rounded bg-green-600 text-white">➕ Asset</button>
+  </div>
 
 </div>
-
-
-
-
-
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-
-<p class="text-gray-500">
-Performance
-</p>
-
-<h2 class="text-3xl font-bold">
-
-{{printf "%.2f" .GainPercent}} %
-
-</h2>
-
-</div>
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-
-<!-- CHARTS -->
-
-
-<div class="grid md:grid-cols-2 gap-6 mb-8">
-
-
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-
-
-<h2 class="text-xl font-bold mb-4">
-Asset Allocation
-</h2>
-
-
-<div class="max-w-xs mx-auto">
-
-<canvas id="allocationChart"></canvas>
-
-</div>
-
-
-</div>
-
-
-
-
-
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-
-
-<h2 class="text-xl font-bold mb-4">
-Gain/Loss per Asset
-</h2>
-
-
-<canvas id="gainChart"></canvas>
-
-
-</div>
-
-
-
-</div>
-
-
-
-
-
-
-
-<!-- TABLE -->
-
-
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-x-auto">
-
-
-
-<table class="w-full text-sm">
-
-
-
-<thead class="bg-gray-200 dark:bg-gray-700">
-
-
-<tr>
-
-
-<th class="p-3">
-Ticker
-</th>
-
-
-<th>
-Tipo
-</th>
-
-
-<th>
-Broker
-</th>
-
-
-<th>
-Quantità
-</th>
-
-
-<th>
-PMC
-</th>
-
-
-<th>
-Investito
-</th>
-
-
-<th>
-Prezzo
-</th>
-
-
-<th>
-Valore
-</th>
-
-
-<th>
-Gain/Loss
-</th>
-
-
-<th>
-%
-</th>
-
-
-</tr>
-
-
-</thead>
-
-
-
-
-<tbody>
-
-
-
-{{range .Assets}}
-
-
-<tr class="border-t dark:border-gray-700 text-center">
-
-
-
-<td class="p-3 font-bold">
-
-{{.Ticker}}
-
-</td>
-
-
-
-<td>
-
-{{.Type}}
-
-</td>
-
-
-
-<td>
-
-{{.Broker}}
-
-</td>
-
-
-
-<td>
-
-{{printf "%.4f" .Quantity}}
-
-</td>
-
-
-
-<td>
-
-{{printf "%.2f" .AvgCost}}
-
-</td>
-
-
-
-<td>
-
-{{printf "%.2f" .Invested}}
-
-</td>
-
-
-
-<td>
-
-{{printf "%.2f" .LastPrice}}
-
-</td>
-
-
-
-<td>
-
-{{printf "%.2f" .MarketValue}}
-
-</td>
-
-
-
-<td>
-
-{{printf "%.2f" .GainLoss}}
-
-</td>
-
-
-
-<td>
-
-{{printf "%.2f" .GainPercent}} %
-
-</td>
-
-
-
-</tr>
-
 
 {{end}}
 
 
+{{define "all"}}
+{{template "summary" .}}
+{{template "charts" .}}
+{{template "assets" .}}
+{{template "history" .}}
+{{template "taxes" .}}
+{{end}}
 
-</tbody>
 
+{{define "summary"}}
 
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
 
-</table>
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+    <p class="text-gray-500">Valore</p>
+    <h2 class="text-2xl font-bold">{{printf "%.2f" .Portfolio.TotalValue}} €</h2>
+  </div>
 
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+    <p class="text-gray-500">Investito</p>
+    <h2 class="text-2xl font-bold">{{printf "%.2f" .Portfolio.TotalInvested}} €</h2>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+    <p class="text-gray-500">Gain/Loss</p>
+    <h2 class="text-2xl font-bold {{if ge .Portfolio.TotalGain 0.0}}text-green-600{{else}}text-red-600{{end}}">
+      {{printf "%+.2f" .Portfolio.TotalGain}} €</h2>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+    <p class="text-gray-500">Performance</p>
+    <h2 class="text-2xl font-bold">{{printf "%+.2f" .Portfolio.GainPercent}} %</h2>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+    <p class="text-gray-500">Asset</p>
+    <h2 class="text-2xl font-bold">{{len .Portfolio.Assets}}</h2>
+  </div>
 
 </div>
 
+{{end}}
 
 
+{{define "charts"}}
 
+<div class="grid md:grid-cols-3 gap-6 mb-8">
 
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+    <h2 class="text-xl font-bold mb-4">Asset Allocation</h2>
+    <div class="max-w-xs mx-auto"><canvas id="allocationChart"></canvas></div>
+  </div>
 
-<p class="mt-5 text-sm text-gray-500">
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+    <h2 class="text-xl font-bold mb-4">Gain/Loss per Asset</h2>
+    <canvas id="gainChart"></canvas>
+  </div>
 
-Ultimo aggiornamento:
-
-{{.LastUpdate}}
-
-</p>
-
-
-
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+    <h2 class="text-xl font-bold mb-4">Asset Allocation per Broker</h2>
+    <div class="max-w-xs mx-auto"><canvas id="brokerChart"></canvas></div>
+  </div>
 
 </div>
 
-
-
-
-
-
-
-
-<script>
-
-
-function toggleDark(){
-
-document.documentElement.classList.toggle(
-"dark"
-);
-
-}
-
-
-
-
-
-
-fetch("/api/charts")
-
-.then(response => response.json())
-
-.then(data => {
-
-
-
-new Chart(
-
-document.getElementById(
-"allocationChart"
-),
-
-{
-
-type:"doughnut",
-
-
-data:{
-
-
-labels:Object.keys(data.allocation),
-
-
-datasets:[{
-
-data:Object.values(data.allocation),
-
-
-backgroundColor:
-
-
-Object.keys(data.allocation).map(type => {
-
-
-if(type==="ETF")
-return "#22c55e";
-
-
-if(type==="Bond")
-return "#3b82f6";
-
-
-if(type==="Crypto")
-return "#f97316";
-
-
-return "#9ca3af";
-
-
-})
-
-
-
-}]
-
-},
-
-
-
-options:{
-
-
-cutout:"65%",
-
-
-plugins:{
-
-
-legend:{
-
-
-position:"bottom"
-
-
-},
-
-
-
-tooltip:{
-
-
-callbacks:{
-
-
-label:function(context){
-
-
-let total =
-context.dataset.data.reduce(
-(a,b)=>a+b,
-0
-);
-
-
-let percent =
-(
-context.raw /
-total *
-100
-).toFixed(1);
-
-
-
-return context.raw.toLocaleString(
-"it-IT",
-{
-style:"currency",
-currency:"EUR"
-}
-)
-+
-" ("+
-percent+
-"%)";
-
-
-}
-
-
-
-}
-
-
-
-}
-
-
-
-}
-
-
-
-}
-
-
-}
-
-);
-
-
-
-
-
-
-
-new Chart(
-
-document.getElementById(
-"gainChart"
-),
-
-{
-
-
-type:"bar",
-
-
-data:{
-
-
-labels:data.names,
-
-
-datasets:[{
-
-label:"Gain/Loss €",
-
-data:data.gains
-
-}]
-
-
-}
-
-
-}
-
-);
-
-
-
-});
-
-
-
-</script>
-
-
-
-</body>
-
-</html>
+{{end}}
+
+
+{{define "assets"}}
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-x-auto mb-8">
+
+  <div class="flex justify-between items-center p-4">
+    <h2 class="text-xl font-bold">Asset</h2>
+    <button onclick="openModal()" class="px-3 py-1 rounded bg-green-600 text-white text-sm">➕ Nuovo</button>
+  </div>
+
+  <table class="w-full text-sm">
+    <thead class="bg-gray-200 dark:bg-gray-700">
+      <tr>
+        <th class="p-2 text-left">Nome</th>
+        <th class="p-2 text-left">Tipo</th>
+        <th class="p-2 text-left">Broker</th>
+        <th class="p-2 text-right">Qtà</th>
+        <th class="p-2 text-right">PMC</th>
+        <th class="p-2 text-right">Investito</th>
+        <th class="p-2 text-right">Prezzo</th>
+        <th class="p-2 text-right">Valore</th>
+        <th class="p-2 text-right">Gain</th>
+        <th class="p-2 text-right">%</th>
+        <th class="p-2 text-center">Azioni</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Portfolio.Assets}}
+      <tr class="border-t dark:border-gray-700">
+        <td class="p-2 font-bold">{{.Name}} <span class="text-gray-400 text-xs">({{.Ticker}})</span></td>
+        <td class="p-2">{{.Type}}</td>
+        <td class="p-2">{{.Broker}}</td>
+        <td class="p-2 text-right">{{printf "%.4f" .Quantity}}</td>
+        <td class="p-2 text-right">{{printf "%.2f" .AvgCost}}</td>
+        <td class="p-2 text-right">{{printf "%.2f" .Invested}}</td>
+        <td class="p-2 text-right">{{printf "%.2f" .LastPrice}}</td>
+        <td class="p-2 text-right">{{printf "%.2f" .MarketValue}}</td>
+        <td class="p-2 text-right {{if ge .GainLoss 0.0}}text-green-600{{else}}text-red-600{{end}}">{{printf "%+.2f" .GainLoss}}</td>
+        <td class="p-2 text-right">{{printf "%.2f" .GainPercent}}%</td>
+        <td class="p-2 text-center whitespace-nowrap">
+          <button onclick="editAsset({{.ID}})" class="text-blue-500 text-xs mr-2">Modifica</button>
+          <button hx-post="/api/assets/{{.ID}}/duplicate"
+                  hx-target="#dashboard" hx-swap="innerHTML"
+                  class="text-purple-500 text-xs mr-2">Duplica</button>
+          <button hx-delete="/api/assets/{{.ID}}"
+                  hx-target="#dashboard" hx-swap="innerHTML"
+                  hx-confirm="Eliminare {{.Name}}?"
+                  class="text-red-500 text-xs">Elimina</button>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+</div>
+
+{{end}}
+
+
+{{define "history"}}
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5 mb-8">
+  <h2 class="text-xl font-bold mb-4">Storico</h2>
+  <div class="overflow-x-auto max-h-64">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-200 dark:bg-gray-700">
+        <tr>
+          <th class="p-2 text-left">Data</th>
+          <th class="p-2 text-right">Valore</th>
+          <th class="p-2 text-right">Investito</th>
+          <th class="p-2 text-right">Gain</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .History}}
+        <tr class="border-t dark:border-gray-700">
+          <td class="p-2">{{.Timestamp}}</td>
+          <td class="p-2 text-right">{{printf "%.2f" .TotalValue}}</td>
+          <td class="p-2 text-right">{{printf "%.2f" .TotalInvested}}</td>
+          <td class="p-2 text-right">{{printf "%+.2f" .TotalGain}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <a href="/api/export/csv" class="inline-block mt-3 text-blue-500 text-sm">⬇ Esporta CSV</a>
+</div>
+
+{{end}}
+
+
+{{define "taxes"}}
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5 mb-8">
+  <h2 class="text-xl font-bold mb-4">Fiscalità Italiana</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <p class="text-gray-500">Plusvalenze</p>
+      <h3 class="text-xl font-bold text-green-600">{{printf "%.2f" .Tax.Plusvalenze}} €</h3>
+    </div>
+    <div>
+      <p class="text-gray-500">Minusvalenze</p>
+      <h3 class="text-xl font-bold text-red-600">{{printf "%.2f" .Tax.Minusvalenze}} €</h3>
+    </div>
+    <div>
+      <p class="text-gray-500">Imposta stimata</p>
+      <h3 class="text-xl font-bold">{{printf "%.2f" .Tax.TotalTax}} €</h3>
+    </div>
+  </div>
+  <p class="mt-3 text-sm text-gray-500">
+    Aliquota 12,5% titoli di Stato · 26% sugli altri strumenti.
+  </p>
+</div>
+
+{{end}}
